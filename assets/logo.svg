@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="48" viewBox="0 0 300 48">
+  <rect x="2" y="26" width="9" height="18" rx="2" fill="#C9603F"/>
+  <rect x="15" y="16" width="9" height="28" rx="2" fill="#E07A5F"/>
+  <rect x="28" y="4" width="9" height="40" rx="2" fill="#F6BBA3"/>
+  <text x="52" y="33" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="21" font-weight="700"
+        letter-spacing="0.6" fill="#F4E9E3">AI DATA ANALYST</text>
+</svg>
