@@ -1,0 +1,20 @@
+# Look of the app (matches assets/style.css and src/theme.py)
+[theme]
+base = "light"
+primaryColor = "#D9785A"
+backgroundColor = "#ECECEC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1E1A18"
+borderColor = "#E2DFDC"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+baseRadius = "14px"
+
+[theme.sidebar]
+backgroundColor = "#221410"
+secondaryBackgroundColor = "#33211A"
+textColor = "#F4ECE8"
+primaryColor = "#D9785A"
+borderColor = "#3A2820"
+
+[client]
+toolbarMode = "minimal"   # hides the Deploy button for clean screenshots
