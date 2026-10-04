@@ -158,3 +158,9 @@ OPENAI_API_KEY = "sk-..."
 ## Author
 **Austin Chi**: Information Systems & Technology student · Data / Business Analyst
 [LinkedIn](#) · [Portfolio](#) · [Email](#)
+
+## Look & auto-arrange
+
+- **Theme** lives in three matching places: `.streamlit/config.toml` (Streamlit widgets), `assets/style.css` (cards, sidebar, pills) and `src/theme.py` (chart colours). Light grey canvas, espresso sidebar, white rounded cards, coral accent.
+- **Auto-arrange** (`src/layout.py`): every time a new file is loaded, the dashboard resets its filters, drops any panel the file can't fill (e.g. no country or product column), removes dropdown options the data can't answer, and re-packs the remaining panels two per row at equal height. KPI cards widen to fill the row.
+- **Clean screenshot mode** (toggle in the sidebar) hides buttons, expanders, captions and the upload button so the page is ready to capture.
