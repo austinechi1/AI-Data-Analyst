@@ -9,6 +9,7 @@ from src.ai_assistant import friendly_error
 from src.analysis import (compute_kpis, correlation_matrix, filter_months, format_kpi, is_sales_data, kpi_trends,
                           numeric_summary, pct_change, period_options, previous_period, revenue_over_time)
 from src.insights import dashboard_highlights
+from src.layout import arrange, auto_columns, available
 from src.ui import get_assistant, get_data, kpi_cards, page_header, panel_title, show_chart, summary_items
 from src.visualization import area_line, heatmap, histogram, ranked_bars
 
@@ -43,19 +44,20 @@ if not (is_sales_data(schema) and schema.get("date")):
         {"label": "Missing values", "value": f"{data['profile']['missing_values']:,}", "icon": "alert",
          "note": "in the original file"},
     ])
-    left, right = st.columns(2)
-    if numerical:
+    corr = correlation_matrix(df_all, numerical)
+    left, right = auto_columns([bool(numerical), not corr.empty])  # empty panels are left out
+    if left:
         with left, st.container(key="panel_dist"):
             panel_title("Distribution", "chart")
             col = st.selectbox("Column", numerical, label_visibility="collapsed", key="dist_col")
             show_chart(histogram(df_all, col), "dist_chart")
-    corr = correlation_matrix(df_all, numerical)
-    if not corr.empty:
+    if right:
         with right, st.container(key="panel_corr"):
             panel_title("Correlation", "trend")
             show_chart(heatmap(corr, ""), "corr_chart")
-    with st.expander("Descriptive statistics"):
-        st.dataframe(numeric_summary(df_all, numerical))
+    if numerical:
+        with st.expander("Descriptive statistics"):
+            st.dataframe(numeric_summary(df_all, numerical))
     dataset_profile()
     st.stop()
 
@@ -64,14 +66,16 @@ date_col, rev = schema["date"], schema["revenue"]
 country_col = schema.get("country")
 prod = schema.get("product") or schema.get("product_code")
 
-title_col, period_col, country_sel_col = st.columns([2.4, 1, 1], vertical_alignment="bottom")
+# the country filter is only drawn when the file has a country column
+title_col, period_col, country_sel_col = st.columns([2.4, 1, 1] if country_col else [3.4, 1], vertical_alignment="bottom") + [None] * (not country_col)
 with title_col:
     page_header("Sales Performance Overview", "Key metrics and insights from your sales data.")
 periods = period_options(df_all, date_col)
 period = period_col.selectbox("Period", list(periods), key="f_period", label_visibility="collapsed")
-countries = ["All Countries"] + (sorted(df_all[country_col].dropna().astype(str).unique()) if country_col else [])
-country = country_sel_col.selectbox("Country", countries, key="f_country", label_visibility="collapsed",
-                                    disabled=not country_col)
+country = "All Countries"
+if country_col:
+    countries = ["All Countries"] + sorted(df_all[country_col].dropna().astype(str).unique())
+    country = country_sel_col.selectbox("Country", countries, key="f_country", label_visibility="collapsed")
 
 start, n_months = periods[period]
 base = df_all if country == "All Countries" else df_all[df_all[country_col].astype(str) == country]
@@ -98,44 +102,50 @@ for name, icon_name, series in [("Total Revenue", "pound", "Revenue"), ("Total O
 kpi_cards(cards)
 
 # ---------------------------------------------------------------- row 1: trend + countries
-row1_left, row1_right = st.columns([1.45, 1], gap="medium")
+monthly = revenue_over_time(df, schema)
+group = country_col if country == "All Countries" else schema.get("customer")
+# Auto-arrange: panels this file can't fill are dropped and the rest are re-packed two per row.
+slots = arrange([("trend", True, 1.45), ("country", bool(group), 1), ("products", bool(prod), 1.25), ("summary", True, 1)])
+row1_left, row1_right, row2_left, row2_right = slots["trend"], slots["country"], slots["products"], slots["summary"]
 with row1_left, st.container(key="panel_trend"):
     h, s = st.columns([3, 1.2], vertical_alignment="center")
     with h:
         panel_title("Monthly Revenue Trend", "bars")
-    metric = s.selectbox("Trend metric", ["Revenue", "Orders", "Average Order Value"], key="trend_metric",
-                         label_visibility="collapsed")
-    monthly = revenue_over_time(df, schema)
+    metric = s.selectbox("Trend metric", available({"Revenue": True, "Orders": "Orders" in monthly,
+                                                    "Average Order Value": "Orders" in monthly}),
+                         key="trend_metric", label_visibility="collapsed")
     if metric == "Average Order Value" and "Orders" in monthly:
         monthly["Average Order Value"] = monthly["Revenue"] / monthly["Orders"]
     if metric in monthly:
         show_chart(area_line(monthly, "Period", metric, money=metric != "Orders"), "trend_chart")
 
-with row1_right, st.container(key="panel_country"):
-    h, s = st.columns([3, 1.2], vertical_alignment="center")
-    with h:
-        panel_title("Top Countries by Revenue" if country == "All Countries" else f"Top Customers in {country}", "globe")
-    by = s.selectbox("Country metric", ["Revenue", "Orders", "Customers"], key="country_metric",
-                     label_visibility="collapsed")
-    group = country_col if country == "All Countries" else schema.get("customer")
-    if group:
-        agg = {"Revenue": (rev, "sum"), "Orders": (schema.get("invoice") or rev, "nunique"),
-               "Customers": (schema.get("customer") or rev, "nunique")}[by]
-        table = df.groupby(group).agg(**{by: agg}).nlargest(8, by).reset_index()
-        show_chart(ranked_bars(table, group, by, money=by == "Revenue"), "country_chart")
+if row1_right:
+    with row1_right, st.container(key="panel_country"):
+        h, s = st.columns([3, 1.2], vertical_alignment="center")
+        with h:
+            panel_title("Top Countries by Revenue" if country == "All Countries" else f"Top Customers in {country}", "globe")
+        by = s.selectbox("Country metric", available({"Revenue": True, "Orders": bool(schema.get("invoice")),
+                                                      "Customers": bool(schema.get("customer"))}),
+                         key="country_metric", label_visibility="collapsed")
+        if group:
+            agg = {"Revenue": (rev, "sum"), "Orders": (schema.get("invoice") or rev, "nunique"),
+                   "Customers": (schema.get("customer") or rev, "nunique")}[by]
+            table = df.groupby(group).agg(**{by: agg}).nlargest(8, by).reset_index()
+            show_chart(ranked_bars(table, group, by, money=by == "Revenue"), "country_chart")
 
 # ---------------------------------------------------------------- row 2: products + summary
-row2_left, row2_right = st.columns([1.25, 1], gap="medium")
-with row2_left, st.container(key="panel_products"):
-    h, s = st.columns([3, 1.2], vertical_alignment="center")
-    with h:
-        panel_title("Top Products by Revenue", "box")
-    pm = s.selectbox("Product metric", ["Revenue", "Units Sold"], key="product_metric", label_visibility="collapsed")
-    if prod:
-        value_col = rev if pm == "Revenue" else schema.get("quantity")
-        if value_col:
-            table = df.groupby(prod)[value_col].sum().nlargest(8).rename(pm).reset_index()
-            show_chart(ranked_bars(table, prod, pm, money=pm == "Revenue", height=360), "product_chart")
+if row2_left:
+    with row2_left, st.container(key="panel_products"):
+        h, s = st.columns([3, 1.2], vertical_alignment="center")
+        with h:
+            panel_title("Top Products by Revenue", "box")
+        pm = s.selectbox("Product metric", available({"Revenue": True, "Units Sold": bool(schema.get("quantity"))}),
+                         key="product_metric", label_visibility="collapsed")
+        if prod:
+            value_col = rev if pm == "Revenue" else schema.get("quantity")
+            if value_col:
+                table = df.groupby(prod)[value_col].sum().nlargest(8).rename(pm).reset_index()
+                show_chart(ranked_bars(table, prod, pm, money=pm == "Revenue", height=360), "product_chart")
 
 with row2_right, st.container(key="panel_summary"):
     assistant = get_assistant()
