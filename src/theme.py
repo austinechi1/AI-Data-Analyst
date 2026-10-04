@@ -2,19 +2,20 @@
 theme.py
 --------
 One place for the app's colours, so the dashboard, charts and CSS all match.
+Light canvas, espresso sidebar, white cards and a coral accent.
 """
 
-BG = "#160C08"          # page background
-CARD = "#22130D"        # card / panel background
-CARD_2 = "#2B1810"      # raised elements inside cards
-BORDER = "#3A2219"
-TEXT = "#F4E9E3"
-MUTED = "#B89D90"
-COPPER = "#E07A5F"      # main accent
-COPPER_DARK = "#C9603F"
-PEACH = "#F6BBA3"       # lighter bars
-GREEN = "#4ADE80"
-RED = "#F87171"
+BG = "#ECECEC"          # page background
+CARD = "#FFFFFF"        # card / panel background
+CARD_2 = "#F5F3F2"      # raised elements inside cards
+BORDER = "#E2DFDC"
+TEXT = "#1E1A18"
+MUTED = "#8C8682"
+COPPER = "#D9785A"      # main accent (coral)
+COPPER_DARK = "#C2603F"
+PEACH = "#D6D2CF"       # soft grey used for the smaller bars
+GREEN = "#22C55E"
+RED = "#DC2626"
 
 
 def blend(c1: str, c2: str, t: float) -> str:

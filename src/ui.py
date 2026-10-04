@@ -2,7 +2,7 @@
 ui.py
 -----
 Shared interface pieces used by every page:
-  - load_css()          applies the dark copper theme (assets/style.css)
+  - load_css()          applies the light coral theme (assets/style.css)
   - render_header()     title, dataset pill and the "Upload Dataset" button
   - render_sidebar()    logo + dataset status card (the page menu comes from st.navigation)
   - get_data()          gives each page the loaded and cleaned dataset
@@ -22,8 +22,9 @@ from src.analysis import profile_dataset
 from src.data_cleaning import clean_column_names, detect_column_types, detect_schema, prepare_data, quality_report
 from src.data_loader import SAMPLE_NAME, load_bytes, load_sample
 from src.icons import icon, svg_img
+from src.layout import DATASET_WIDGET_KEYS
 from src.sql_engine import SQLEngine
-from src.theme import COPPER, GREEN, MUTED
+from src.theme import COPPER, COPPER_DARK, GREEN, MUTED
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
@@ -80,8 +81,8 @@ def _load_dataset(uploaded):
     # A new dataset starts a fresh conversation and summary.
     if st.session_state.get("dataset_key") != key:
         st.session_state["dataset_key"] = key
-        for k in ["chat_history", "sql_result", "ai_summary", "ai_highlights", "sql_editor"]:
-            st.session_state.pop(k, None)
+        for k in ["chat_history", "sql_result", "ai_summary", "ai_highlights", "sql_editor", *DATASET_WIDGET_KEYS]:
+            st.session_state.pop(k, None)  # filters too, so the new file's dashboard re-arranges from clean defaults
     st.session_state["data"] = data
     return data
 
@@ -142,6 +143,11 @@ def render_sidebar(data):
         else:
             ai = f'<span class="dot" style="background:{GREEN}"></span>&nbsp; Free assistant active'
         st.html(f'<div class="status-card">{status}<div class="status-ai">{ai}</div></div>')
+        st.write("")
+        if st.toggle("Clean screenshot mode", key="clean_mode",
+                     help="Hides buttons, expanders and captions so the page is ready to capture."):
+            st.html("<style>.stMain [data-testid='stExpander'], .stMain .stButton, .stMain [data-testid='stCaptionContainer'],"
+                    ".stMain [data-testid='stPopover'], [data-testid='stToolbar'] { display: none !important; }</style>")
 
 
 def get_data():
@@ -193,16 +199,16 @@ def sparkline(values, width=130, height=42, color=COPPER) -> str:
     gid = "fade"
     return svg_img(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">'
             f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1">'
-            f'<stop offset="0%" stop-color="{color}" stop-opacity="0.45"/>'
+            f'<stop offset="0%" stop-color="{color}" stop-opacity="0.25"/>'
             f'<stop offset="100%" stop-color="{color}" stop-opacity="0"/></linearGradient></defs>'
             f'<polygon points="{area}" fill="url(#{gid})"/>'
             f'<polyline points="{line}" fill="none" stroke="{color}" stroke-width="2" stroke-linejoin="round"/>'
-            f'<circle cx="{pts[-1][0]:.1f}" cy="{pts[-1][1]:.1f}" r="3" fill="#FFD9C9"/></svg>', width, height, "trend")
+            f'<circle cx="{pts[-1][0]:.1f}" cy="{pts[-1][1]:.1f}" r="3.5" fill="{COPPER_DARK}"/></svg>', width, height, "trend")
 
 
 def kpi_cards(cards: list[dict]):
     """cards: [{label, value, icon, delta (float or None), note, spark (list)}]"""
-    html = ['<div class="kpi-grid">']
+    html = [f'<div class="kpi-grid n{min(len(cards), 4)}">']  # grid width follows the number of cards
     for c in cards:
         if c.get("delta") is not None:
             d = c["delta"]
@@ -211,7 +217,7 @@ def kpi_cards(cards: list[dict]):
         else:
             delta = escape(c.get("note", ""))
         html.append(
-            f'<div class="kpi"><div class="kpi-top"><div class="kpi-icon">{icon(c["icon"], 24, "#F08E6E")}</div>'
+            f'<div class="kpi"><div class="kpi-top"><div class="kpi-icon">{icon(c["icon"], 24, COPPER)}</div>'
             f'<div><div class="kpi-label">{escape(c["label"])}</div><div class="kpi-value">{escape(c["value"])}</div>'
             f'</div></div><div class="kpi-bottom"><div class="kpi-delta">{delta}</div>'
             f'{sparkline(c.get("spark", []))}</div></div>')

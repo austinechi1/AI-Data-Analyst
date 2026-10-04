@@ -1,7 +1,7 @@
 """
 visualization.py
 ----------------
-Plotly charts with one consistent style (dark copper theme), plus:
+Plotly charts with one consistent style (light coral theme), plus:
   - auto_chart():    picks a sensible chart type for any result table
   - light_version(): restyles a chart for the white downloadable report
 """
@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from src.theme import BORDER, COPPER, COPPER_DARK, MUTED, PEACH, TEXT, blend, rgba
+from src.theme import BORDER, CARD, COPPER, COPPER_DARK, MUTED, PEACH, TEXT, blend, rgba
 
 FONT = "Inter, Segoe UI, Arial, sans-serif"
 
@@ -21,7 +21,7 @@ def _style(fig, title="", height=330):
         height=height, margin=dict(l=10, r=24, t=40 if title else 8, b=8),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family=FONT, color=MUTED, size=12),
-        hoverlabel=dict(bgcolor="#2B1810", bordercolor=COPPER, font=dict(color=TEXT)),
+        hoverlabel=dict(bgcolor=CARD, bordercolor=COPPER, font=dict(color=TEXT)),
         showlegend=False,
     )
     grid = dict(gridcolor=rgba(BORDER, 0.9), zeroline=False, linecolor=BORDER, title=None, automargin=True)
@@ -53,9 +53,9 @@ def area_line(df, x, y, title="", money=True, height=330):
     fig = go.Figure(go.Scatter(
         x=df[x], y=df[y], mode="lines+markers",
         line=dict(color=COPPER, width=3, shape="spline", smoothing=0.3),
-        marker=dict(size=8, color=COPPER, line=dict(color="#FFD9C9", width=1.5)),
+        marker=dict(size=9, color=COPPER, line=dict(color="#FFFFFF", width=2)),
         fill="tozeroy",
-        fillgradient=dict(type="vertical", colorscale=[[0, rgba(COPPER, 0.0)], [1, rgba(COPPER, 0.35)]]),
+        fillgradient=dict(type="vertical", colorscale=[[0, rgba(COPPER, 0.0)], [1, rgba(COPPER, 0.18)]]),
         hovertemplate=f"%{{x|%b %Y}}<br>{y}: " + ("£%{y:,.0f}" if money else "%{y:,.0f}") + "<extra></extra>",
     ))
     _style(fig, title, height)
@@ -80,7 +80,7 @@ def ranked_bars(df, label, value, title="", money=True, height=330):
         hovertemplate="%{y}<br>" + ("£%{x:,.0f}" if money else "%{x:,.0f}") + "<extra></extra>",
     ))
     _style(fig, title, height)
-    fig.update_yaxes(showgrid=False, tickfont=dict(color="#E8D8CF"))
+    fig.update_yaxes(showgrid=False, tickfont=dict(color=TEXT))
     fig.update_xaxes(range=[0, df[value].max() * 1.22] if n else None, griddash="dot")
     _money_axis(fig, "x", money)
     return fig
@@ -115,7 +115,7 @@ def histogram(df, col, title="", clip_quantile=0.99, nbins=40):
 
 
 def heatmap(corr: pd.DataFrame, title="Correlation between numeric columns"):
-    scale = [[0, "#4B6584"], [0.5, "#24140E"], [1, COPPER]]
+    scale = [[0, "#8C8682"], [0.5, "#F5F3F2"], [1, COPPER]]
     fig = px.imshow(corr, text_auto=".2f", color_continuous_scale=scale, zmin=-1, zmax=1, aspect="auto")
     return _style(fig, title, height=380)
 
