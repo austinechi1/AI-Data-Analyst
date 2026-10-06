@@ -1,166 +1,327 @@
 # AI Data Analyst — Ask Your Data
 
-**AI-powered data analytics application that allows users to upload CSV or Excel datasets, explore data quality, generate KPIs and visualizations, execute natural-language SQL queries, and interact with an AI assistant to obtain data-driven business insights.**
+> **An AI-assisted analytics application that turns uploaded CSV/Excel data into traceable KPIs, SQL analysis, visualizations, and business insights.**
 
-Built with Python, Pandas, SQL (SQLite), Plotly, Streamlit and the OpenAI API.
+**Portfolio focus:** AI-assisted analytics · Python · SQL · Data Quality · Business Intelligence
 
-> **AI-assisted, not AI-replaced.** The AI writes SQL or Pandas code; the application runs that code on the real data and shows it to the user. Every number can be traced back to a query.
+[![Python](https://img.shields.io/badge/Python-Analysis-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-SQL-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Plotly](https://img.shields.io/badge/Plotly-Visualization-3F4F75?logo=plotly&logoColor=white)](https://plotly.com/)
 
----
+## Executive Summary
 
-## Project Overview
-A non-technical business user uploads a sales file and, within seconds, sees a profile of the data, a data quality report, headline KPIs and charts. They can then ask questions in plain English (*"Which country generates the most revenue?"*) and get a direct answer, the calculation behind it, a chart, a business interpretation and a suggested next question.
+Many small and mid-sized businesses have useful operational data but lack a fast, reliable way to turn it into answers.
+
+**AI Data Analyst** addresses that gap with a Streamlit application where a user can upload a CSV or Excel file, inspect data quality, generate KPIs and charts, ask questions in natural language, and receive business-oriented explanations.
+
+The key design principle is:
+
+> **AI-assisted, not AI-replaced.**
+
+The AI proposes SQL or Python analysis, but the application executes the analysis on the user's data and exposes the generated logic. This keeps the analytical result traceable rather than treating the AI response as the source of truth.
 
 ## Business Problem
-Small and mid-sized businesses collect sales data but often lack the time or skills to analyse it. Spreadsheets hide data quality problems, and general-purpose AI chatbots can "hallucinate" numbers. Managers need fast answers they can trust.
 
-## Project Objectives
-- Profile and clean messy real-world data automatically
-- Calculate standard sales KPIs and visualise trends
-- Let users query data in plain English **without losing transparency**: show the SQL/Python used
-- Separate **calculated facts**, **interpretations** and **recommendations**
-- Package the findings into a downloadable report
+Business users often need answers such as:
 
-## Features
-| Area | What it does |
+- Which country generates the most revenue?
+- What products are driving sales?
+- Which month performed best?
+- What percentage of orders were cancelled?
+- Which customers contribute the most revenue?
+
+Traditional spreadsheets can make these questions time-consuming, while a generic AI chatbot may produce numbers that cannot easily be verified.
+
+This project combines **data profiling, cleaning, deterministic calculations, SQL, visualization, and AI assistance** into one workflow.
+
+## What the Application Does
+
+| Capability | Business value |
 |---|---|
-| Upload | CSV and Excel (.xlsx), with automatic encoding fallback |
-| Dataset profile | Rows, columns, data types, missing values, duplicates; detects date / numerical / categorical columns |
-| Data quality | Missing values, duplicates, invalid dates, negative quantities and prices, zero prices, extreme values, wrong data types, each with its business consequence |
-| Cleaning | Removes duplicates, cancellations/returns and invalid prices (each switchable); adds `Revenue = Quantity × UnitPrice` |
-| Dashboard | Period and country filters; KPI cards with sparklines and change vs previous period; trend, country and product charts; business summary (calculated, optionally rewritten by AI) |
-| KPIs | Total revenue, orders, customers, average order value, units sold, units per order |
-| Charts | Revenue over time (line), by country (bar), top products (horizontal bar), order values (histogram), correlation (heatmap) |
-| SQL Mode | Example queries, a SQL editor, and natural-language → SQL with the generated query shown before running |
-| AI Assistant | Chat with follow-up memory ("what was **its** average order value?"); answers with result table, chart and code |
-| Business Insights | Rule-based, calculated insights with *why it matters*, plus optional AI recommendations |
-| Report | One-click downloadable HTML report (printable to PDF) |
+| CSV/Excel upload | Analyse a dataset without rebuilding a dashboard |
+| Data profiling | Understand schema, types, missing values and duplicates |
+| Data-quality checks | Identify issues before analysis |
+| Cleaning controls | Make cleaning decisions explicit and measurable |
+| KPI dashboard | Quickly assess revenue, orders, customers and units |
+| SQL mode | Explore data with transparent SQL |
+| Natural-language SQL | Ask analytical questions without writing SQL manually |
+| AI assistant | Ask follow-up questions and receive result-backed explanations |
+| Business insights | Separate calculated facts from interpretation and recommendations |
+| HTML report | Package findings for sharing |
+
+## Analytics Workflow
+
+**Upload → Profile → Validate → Clean → Analyse → Visualize → Interpret → Recommend**
+
+The application is designed around a simple analytical principle:
+
+**The data produces the number. The AI helps explain the number.**
 
 ## Technology Stack
-Python · Pandas · NumPy · SQLite · Plotly · Streamlit · OpenAI API · python-dotenv · pytest · Git/GitHub
+
+| Layer | Technology |
+|---|---|
+| Programming | Python |
+| Data manipulation | Pandas, NumPy |
+| SQL engine | SQLite |
+| Visualization | Plotly |
+| Application | Streamlit |
+| AI | OpenAI API |
+| Configuration | python-dotenv |
+| Testing | pytest |
+| Version control | Git/GitHub |
 
 ## Architecture
-```
-            ┌──────────── Streamlit UI (app.py + pages/) ────────────┐
- Upload ──▶ │ data_loader ─▶ data_cleaning ─▶ analysis / insights    │ ─▶ KPIs, charts, report
-            │                     │                                  │
-            │                     ▼                                  │
-            │               sql_engine (SQLite, read-only)           │
-            │                     ▲                                  │
- Question ─▶│ ai_assistant: plan (AI writes SQL/Pandas)              │
-            │               execute (APP runs it on the real data)   │
-            │               explain (AI explains the actual result)  │
-            └─────────────────────────────────────────────────────────┘
-```
-Only column names, a few example values and query results are sent to OpenAI, never the whole dataset.
 
-## Project Structure
+```text
+                         ┌──────────────────────────┐
+                         │      Streamlit UI        │
+                         │ app.py + pages/          │
+                         └────────────┬─────────────┘
+                                      │
+                         ┌────────────▼─────────────┐
+                         │       Data Loader         │
+                         │     CSV / Excel           │
+                         └────────────┬─────────────┘
+                                      │
+                         ┌────────────▼─────────────┐
+                         │     Data Cleaning         │
+                         │ profiling + validation    │
+                         └────────────┬─────────────┘
+                                      │
+                    ┌─────────────────┴──────────────────┐
+                    │                                    │
+          ┌─────────▼─────────┐                ┌─────────▼─────────┐
+          │ Python Analysis   │                │   SQLite SQL      │
+          │ KPIs + statistics │                │ safe read-only    │
+          └─────────┬─────────┘                └─────────┬─────────┘
+                    │                                    │
+                    └────────────────┬───────────────────┘
+                                     │
+                            ┌────────▼────────┐
+                            │ Charts + Insights│
+                            └────────┬─────────┘
+                                     │
+                            ┌────────▼─────────┐
+                            │  AI Assistant     │
+                            │ plan → execute    │
+                            │ → explain         │
+                            └───────────────────┘
 ```
-AI-Data-Analyst/
-├── app.py                  # entry point: navigation + shared sidebar
-├── data/sample_sales.csv   # sample dataset
-├── src/
-│   ├── data_loader.py      # read CSV / Excel
-│   ├── data_cleaning.py    # schema detection, column types, quality report, cleaning
-│   ├── analysis.py         # profile, KPIs, breakdowns (Pandas)
-│   ├── sql_engine.py       # SQLite engine + safe query validation
-│   ├── ai_assistant.py     # OpenAI: plan → execute → explain
-│   ├── visualization.py    # Plotly charts + automatic chart choice
-│   ├── insights.py         # rule-based business insights
-│   ├── report.py           # HTML report builder
-│   └── ui.py               # sidebar, caching, shared helpers
-├── pages/                  # dashboard, data_quality, business_insights, ai_chat, sql_mode, export_report
-├── tests/test_core.py      # automated tests (pytest)
-├── docs/GUIDE.md           # beginner walkthrough of every file
-├── assets/                 # style.css, logo, screenshots
-├── requirements.txt
-├── .env.example
-└── .gitignore
-```
+
+Only schema information, limited example values, and calculated query results are sent to the OpenAI API; the application does not send the entire dataset.
 
 ## Dataset
-`data/sample_sales.csv` is a **synthetic** dataset (25,242 rows) generated in the same format as the [UCI Online Retail dataset](https://archive.ics.uci.edu/dataset/352/online+retail): `InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country`. It deliberately contains real-world problems (duplicates, cancellations, missing IDs, bad-debt adjustments, extreme quantities) to demonstrate cleaning. The app also works with the real UCI file (541,909 rows) and with other CSV/Excel datasets.
 
-## Data Cleaning
-1. Trim column names; convert dates and numbers stored as text
-2. Create `Revenue = Quantity × UnitPrice`
-3. Flag cancellations (`InvoiceNo` starting with "C" or negative quantity) as `IsCancelled`
-4. Remove duplicates, cancellations and zero/negative prices (each optional), logging how many rows each step removed
+The included `data/sample_sales.csv` is a **synthetic 25,242-row dataset** following the structure of the UCI Online Retail dataset:
 
-The cancellation rate is measured *before* removal so it can still be reported.
+`InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country`
+
+It deliberately contains realistic data-quality issues such as duplicates, cancellations, missing customer IDs, extreme quantities, and invalid prices.
+
+The application can also work with other compatible CSV/Excel datasets.
+
+## Data Quality & Cleaning
+
+The application checks for:
+
+- Missing values
+- Duplicate records
+- Invalid dates
+- Negative quantities
+- Zero or negative prices
+- Extreme values
+- Incorrect data types
+- Cancellation/return records
+
+A calculated `Revenue` field is created as:
+
+`Revenue = Quantity × UnitPrice`
+
+Cleaning operations are configurable so the user can see what was removed and why.
 
 ## SQL Analysis
-The cleaned data is loaded into an in-memory SQLite table called `sales`. Example:
+
+Cleaned data is loaded into an in-memory SQLite table named `sales`.
+
+Example:
+
 ```sql
-SELECT "Country", ROUND(SUM("Revenue"), 2) AS Revenue
+SELECT
+    "Country",
+    ROUND(SUM("Revenue"), 2) AS Revenue
 FROM sales
 GROUP BY "Country"
 ORDER BY Revenue DESC
 LIMIT 10;
 ```
-Queries are validated (single `SELECT`/`WITH` statement, no data-changing keywords) and the connection is read-only (`PRAGMA query_only`).
+
+The SQL engine validates queries and permits read-only `SELECT` / `WITH` statements.
 
 ## Python Analysis
-Aggregations, grouping, filtering, descriptive statistics, correlations, monthly time series, customer analysis (orders, revenue, AOV per customer) and product trend analysis (first vs second half of the period), e.g.:
+
+Pandas is used for:
+
+- Grouped analysis
+- Descriptive statistics
+- Customer analysis
+- Product analysis
+- Monthly trends
+- Correlations
+- KPI calculations
+
+Example:
+
 ```python
 df.groupby("Country")["Revenue"].sum().sort_values(ascending=False)
 ```
 
-## AI Integration
-1. **Plan:** the model receives the schema and question and returns JSON with `method` (sql/pandas), `code` and a chart suggestion.
-2. **Execute:** the app runs the code: SQL through the read-only engine, Pandas in a restricted namespace on a copy of the data. If it fails, the error is sent back once for self-correction.
-3. **Explain:** the model receives only the *calculated result* and returns an answer, calculation, interpretation, recommendation and next question.
+## AI Analysis Flow
 
-Recent conversation turns are included so follow-up questions work.
+The AI workflow follows three stages:
 
-## Screenshots
-_Add screenshots to `assets/screenshots/` and reference them here:_
-`![Dashboard](assets/screenshots/dashboard.png)` · `![AI Assistant](assets/screenshots/ai_chat.png)` · `![Data Quality](assets/screenshots/data_quality.png)`
+### 1. Plan
+The model receives the dataset schema and the user's question and proposes an analytical method.
 
-## Example Questions
-- What are my top 10 products?
-- Which country generates the most revenue? → What was its average order value?
+### 2. Execute
+The application executes the proposed SQL or Pandas analysis against the actual dataset.
+
+### 3. Explain
+The AI receives the **calculated result**, then produces an interpretation, recommendation, and possible next question.
+
+This separation is important because the AI does not simply invent a business answer independently of the data.
+
+## Example Business Questions
+
+- What are the top 10 products by revenue?
+- Which country generates the most revenue?
 - What was the best sales month?
 - Which products have declining sales?
 - What percentage of orders were cancelled?
-- Give me three important business insights from this dataset.
+- What are three important business insights from this dataset?
+- What was the average order value for the highest-revenue country?
 
-## Example Insights (sample data)
-- Q4 generated 35.2% of annual revenue versus 21.6% for an average other quarter: a strong holiday dependency.
-- The United Kingdom accounts for 66.7% of revenue, a concentration risk.
-- The top 10% of customers generate 60.6% of identified-customer revenue.
+## Example Insights
 
-## How to Run Locally
+Using the included sample data, the application can surface findings such as:
+
+- Q4 generated a disproportionately large share of annual revenue, indicating seasonal demand.
+- The United Kingdom represents a major share of revenue, indicating geographic concentration.
+- A relatively small group of high-value customers contributes a large share of identified-customer revenue.
+
+These examples demonstrate the type of analysis the application can produce; results depend on the uploaded dataset and selected cleaning rules.
+
+## Project Structure
+
+```text
+AI-Data-Analyst/
+├── app.py
+├── data/
+│   └── sample_sales.csv
+├── src/
+│   ├── data_loader.py
+│   ├── data_cleaning.py
+│   ├── analysis.py
+│   ├── sql_engine.py
+│   ├── ai_assistant.py
+│   ├── visualization.py
+│   ├── insights.py
+│   ├── report.py
+│   └── ui.py
+├── pages/
+│   ├── dashboard
+│   ├── data_quality
+│   ├── business_insights
+│   ├── ai_chat
+│   ├── sql_mode
+│   └── export_report
+├── tests/
+│   └── test_core.py
+├── docs/
+│   └── GUIDE.md
+├── assets/
+├── requirements.txt
+├── .env.example
+└── .gitignore
+```
+
+## Running Locally
+
 ```bash
-git clone https://github.com/<your-username>/AI-Data-Analyst.git
+git clone https://github.com/austinechi1/AI-Data-Analyst.git
 cd AI-Data-Analyst
+
 python -m venv venv
-venv\Scripts\activate            # Windows  (Mac/Linux: source venv/bin/activate)
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+
 pip install -r requirements.txt
-copy .env.example .env           # Windows  (Mac/Linux: cp .env.example .env), then add your key
+```
+
+Create a `.env` file from `.env.example` and add your OpenAI API key if you want to use the AI features.
+
+Then run:
+
+```bash
 streamlit run app.py
 ```
-Run the tests with `pytest`. The dashboard, data quality, insights, SQL examples and report all work **without** an API key; only the AI features need one.
 
-## Deployment (Streamlit Community Cloud)
-Push to GitHub → share.streamlit.io → *New app* → pick the repo and `app.py` → *Advanced settings → Secrets*:
-```toml
-OPENAI_API_KEY = "sk-..."
+Run tests with:
+
+```bash
+pytest
 ```
 
+The core dashboard and analytical functionality can run without an API key; the AI features require one.
+
+## Deployment
+
+The application can be deployed using **Streamlit Community Cloud**.
+
+Configure the required secret:
+
+```toml
+OPENAI_API_KEY = "your-key"
+```
+
+## Key Skills Demonstrated
+
+**Data Analytics:** data cleaning · profiling · KPI development · exploratory analysis · business insights
+
+**SQL:** SQLite · aggregation · filtering · grouping · analytical queries · safe query execution
+
+**Python:** Pandas · NumPy · reusable modules · data transformation
+
+**Visualization:** Plotly · interactive dashboards · KPI storytelling
+
+**AI:** natural-language analytics · SQL generation · result-backed explanations
+
+**Engineering:** Streamlit · testing · modular architecture · Git/GitHub
+
 ## Future Improvements
-- Support PostgreSQL / cloud warehouses in addition to SQLite
-- Customer segmentation (RFM analysis) and simple sales forecasting
-- Stronger sandboxing for AI-generated Python (e.g. a separate process)
-- User-selected column mapping when automatic detection fails
-- PDF export and scheduled reports
+
+- PostgreSQL/cloud warehouse support
+- RFM customer segmentation
+- Forecasting
+- Stronger sandboxing for AI-generated Python
+- Automated scheduled reports
+- PDF export
+- Role-based access
+- Audit logging
 
 ## Author
-**Austin Chi**: Information Systems & Technology student · Data / Business Analyst
-[LinkedIn](#) · [Portfolio](#) · [Email](#)
 
-## Look & auto-arrange
+**Nwachukwu Austine**  
+Data Analyst | SQL | Python | Power BI
 
-- **Theme** lives in three matching places: `.streamlit/config.toml` (Streamlit widgets), `assets/style.css` (cards, sidebar, pills) and `src/theme.py` (chart colours). Light grey canvas, espresso sidebar, white rounded cards, coral accent.
-- **Auto-arrange** (`src/layout.py`): every time a new file is loaded, the dashboard resets its filters, drops any panel the file can't fill (e.g. no country or product column), removes dropdown options the data can't answer, and re-packs the remaining panels two per row at equal height. KPI cards widen to fill the row.
-- **Clean screenshot mode** (toggle in the sidebar) hides buttons, expanders, captions and the upload button so the page is ready to capture.
+[GitHub](https://github.com/austinechi1) · [Portfolio](https://austinechi1.github.io/) · [Email](mailto:austinechi.fx@gmail.com)
+
+---
+
+<p align="center"><strong>AI-assisted analytics. Traceable numbers. Better decisions.</strong></p>
